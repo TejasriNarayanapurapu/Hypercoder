@@ -1,22 +1,19 @@
-from huggingface_hub import InferenceClient
 import streamlit as st
+from huggingface_hub import InferenceClient
 from github_reader import get_github_issue
 
 hf_token = "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"
-
 client = InferenceClient(token=hf_token)
 
 def summarize_issue(title, body):
     input_text = f"Title: {title}\n\nBody: {body}"
     try:
-        # This calls the public distilbart-cnn-12-6 summarization model
-        output = client.text_summarization(inputs=input_text, model="sshleifer/distilbart-cnn-12-6")
+        output = client.pipeline(task="summarization", model="sshleifer/distilbart-cnn-12-6", inputs=input_text)
         return output[0]['summary_text']
     except Exception as e:
         return f"Error from HuggingFace: {e}"
 
-# Streamlit UI
-st.markdown("<h1 style='text-align: center; color: #4CAF50;'>🤗 HuggingFace-Powered HyperCoder</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center; color: #4CAF50;'>🤗 HuggingFace HyperCoder</h1>", unsafe_allow_html=True)
 
 with st.sidebar:
     st.header("🛠️ Repo Configuration")
@@ -25,7 +22,7 @@ with st.sidebar:
     issue_number = st.number_input("Issue Number", min_value=1, value=1)
 
 if st.button("Fetch and Summarize Issue"):
-    github_token = ""  # Add if you want GitHub auth
+    github_token = ""
     issue = get_github_issue(owner, repo, issue_number, github_token)
 
     if issue and 'title' in issue and 'body' in issue:
@@ -39,7 +36,6 @@ if st.button("Fetch and Summarize Issue"):
     else:
         st.error("❌ Issue not found or invalid data")
 
-# Footer
 st.markdown("""
 <hr>
 <p style='text-align: center; color: gray'>
