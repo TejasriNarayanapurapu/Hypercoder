@@ -1,7 +1,7 @@
 import streamlit as st
+import openai
 from config import get_openai_key, get_github_token
 from github_reader import get_github_issue
-import openai
 
 st.markdown("<h1 style='text-align: center; color: #4CAF50;'>🤖 HyperCoder</h1>", unsafe_allow_html=True)
 
@@ -12,23 +12,21 @@ github_token = get_github_token()
 st.write("OpenAI API Key loaded:", "✅" if openai_key else "❌")
 st.write("GitHub Token loaded:", "✅" if github_token else "❌")
 
-# OpenAI summarization function
-from openai import OpenAI
+# Set OpenAI key globally
+openai.api_key = openai_key
 
-def summarize_issue(title, body, openai_key):
-    client = OpenAI(api_key=openai_key)
-
+# Summarization function using OpenAI
+def summarize_issue(title, body):
     prompt = f"Summarize the following GitHub issue:\n\nTitle: {title}\n\nBody: {body}"
-    
-    response = client.chat.completions.create(
-        model="gpt-4",
-        messages=[
-            {"role": "user", "content": prompt}
-        ]
-    )
-    
-    return response.choices[0].message.content
 
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-4",  # If you don't have GPT-4 access, use "gpt-3.5-turbo"
+            messages=[{"role": "user", "content": prompt}]
+        )
+        return response['choices'][0]['message']['content']
+    except Exception as e:
+        return f"Error summarizing issue: {str(e)}"
 
 # Sidebar input
 with st.sidebar:
@@ -47,7 +45,7 @@ if st.button("Fetch and Summarize Issue"):
         st.write(f"**Body:** {issue['body'][:1000]}...")
 
         st.subheader("🧠 AI Summary")
-        summary = summarize_issue(issue['title'], issue['body'], openai_key)
+        summary = summarize_issue(issue['title'], issue['body'])
         st.success(summary)
     else:
         st.error("❌ Issue not found or an error occurred.")
