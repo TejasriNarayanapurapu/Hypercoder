@@ -26,7 +26,10 @@ def summarize_issue(title, body):
         )
         return response.choices[0].message.content
     except Exception as e:
-        return f"Error summarizing issue: {str(e)}"
+        err_msg = str(e)
+        if "insufficient_quota" in err_msg or "429" in err_msg:
+            return "⚠️ API quota exceeded. Please check your OpenAI billing and quota."
+        return f"Error summarizing issue: {err_msg}"
 
 # Sidebar inputs
 with st.sidebar:
