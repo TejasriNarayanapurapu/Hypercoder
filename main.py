@@ -35,16 +35,18 @@ if st.button("Fetch and Summarize Issue"):
     github_token = ""  # Add GitHub token if needed
     issue = get_github_issue(owner, repo, issue_number, github_token)
 
-    if issue:
-        st.subheader("🔍 GitHub Issue Content")
-        st.write(f"**Title:** {issue['title']}")
-        st.write(f"**Body:** {issue['body'][:1000]}...")
+    if issue and isinstance(issue, dict) and 'title' in issue and 'body' in issue:
+    st.subheader("🔍 GitHub Issue Content")
+    st.write(f"**Title:** {issue['title']}")
+    st.write(f"**Body:** {issue['body'][:1000]}...")
+    
+    st.subheader("🧠 AI Summary")
+    summary = summarize_issue(issue['title'], issue['body'])
+    st.success(summary)
+else:
+    st.error("❌ Issue not found or invalid structure returned.")
+    st.json(issue)  # Show what was actually returned for debugging
 
-        st.subheader("🧠 AI Summary")
-        summary = summarize_issue(issue['title'], issue['body'])
-        st.success(summary)
-    else:
-        st.error("❌ Issue not found or an error occurred.")
 
 # Footer
 st.markdown("""
