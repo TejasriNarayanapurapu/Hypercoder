@@ -2,7 +2,7 @@ import streamlit as st
 from config import get_openai_key, get_github_token
 from github_reader import get_github_issue
 
-st.title("🔐 HyperCoder Access")
+st.markdown("<h1 style='text-align: center; color: #4CAF50;'>🤖 HyperCoder</h1>", unsafe_allow_html=True)
 
 openai_key = get_openai_key()
 github_token = get_github_token()
@@ -23,10 +23,16 @@ def summarize_issue(title, body, openai_key):
     return response.choices[0].message.content
 
 # For demo: show a dummy GitHub issue fetch (stub)
-owner = st.text_input("Enter GitHub owner (e.g., openai)")
-repo = st.text_input("Enter repo (e.g., gpt-4)")
-issue_num = st.number_input("Enter issue number", min_value=1, step=1)
+with st.sidebar:
+    st.header("🛠️ Repo Configuration")
+    owner = st.text_input("GitHub Repo Owner", value="octocat")
+    repo = st.text_input("GitHub Repo Name", value="Hello-World")
+    issue_number = st.number_input("Issue Number", min_value=1, value=1)
 
+if st.button("Fetch Issue"):
+    issue = get_github_issue(owner, repo, issue_num, github_token)
+    st.json(issue)
+    
 st.markdown("""
 <hr>
 <p style='text-align: center; color: gray'>
@@ -34,7 +40,3 @@ Made with ❤️ by <b>Tejasri</b> · <a href='https://github.com/TejasriNarayan
 </p>
 """, unsafe_allow_html=True)
 
-
-if st.button("Fetch Issue"):
-    issue = get_github_issue(owner, repo, issue_num, github_token)
-    st.json(issue)
