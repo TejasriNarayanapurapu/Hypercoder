@@ -1,50 +1,31 @@
 import streamlit as st
-from config import get_openai_key, get_github_token
-from github_reader import get_github_issue
-import openai
+from transformers import pipeline
 
-st.title("🔐 HyperCoder Access")
+# Set up HuggingFace summarizer (no API key needed for hosted model)
+@st.cache_resource
+def load_summarizer():
+    return pipeline("summarization", model="facebook/bart-large-cnn")
 
-openai_key = get_openai_key()
-github_token = get_github_token()
+summarizer = load_summarizer()
 
-st.write("OpenAI API Key loaded:", "✅" if openai_key else "❌")
-st.write("GitHub Token loaded:", "✅" if github_token else "❌")
-
-import openai
-
-def summarize_issue(title, body, openai_key):
-    openai.api_key = openai_key
+def summarize_issue(title, body):
     prompt = f"Summarize the following GitHub issue:\n\nTitle: {title}\n\nBody: {body}"
-    
-    response = openai.chat.completions.create(
-        model= "gpt-3.5-turbo" ,
-        messages=[{"role": "user", "content": prompt}]
-    )
-    return response.choices[0].message.content
+    summary = summarizer(prompt, max_length=100, min_length=30, do_sample=False)
+    return summary[0]['summary_text']
 
+# Streamlit UI
+st.markdown("<h1 style='text-align: center;'>🤖 HyperCoder (Free Version)</h1>", unsafe_allow_html=True)
 
-owner = st.text_input("Enter GitHub owner (e.g., openai)")
-repo = st.text_input("Enter repo (e.g., gpt-4)")
-issue_num = st.number_input("Enter issue number", min_value=1, step=1)
+title = st.text_input("GitHub Issue Title", "Example: Bug in Login Function")
+body = st.text_area("GitHub Issue Body", "Example: When clicking on login, the page crashes due to a null pointer...")
 
-if st.button("Fetch Issue"):
-    issue = get_github_issue(owner, repo, issue_num, github_token)
-    if "error" in issue:
-        st.error(issue["error"])
-        st.write(issue.get("details", ""))
+if st.button("Summarize Issue"):
+    if title.strip() == "" and body.strip() == "":
+        st.warning("Please enter a title or body to summarize.")
     else:
-        st.subheader("GitHub Issue")
-        st.write(f"**Title:** {issue.get('title', 'No title')}")
-        st.write(f"**Body:** {issue.get('body', '')}")
-
-        if openai_key:
-            st.subheader("AI Summary")
-            summary = summarize_issue(issue.get('title', ''), issue.get('body', ''), openai_key)
-            st.write(summary)
-        else:
-            st.info("OpenAI API key not loaded. Cannot generate summary.")
-
+        summary = summarize_issue(title, body)
+        st.success("📝 Summary:")
+        st.write(summary)
 
 
 st.markdown("""
