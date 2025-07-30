@@ -18,7 +18,7 @@ def summarize_issue(title, body, openai_key):
     prompt = f"Summarize the following GitHub issue:\n\nTitle: {title}\n\nBody: {body}"
     
     response = openai.chat.completions.create(
-        model= "gpt-3.5-turbo" 
+        model= "gpt-3.5-turbo" ,
         messages=[{"role": "user", "content": prompt}]
     )
     return response.choices[0].message.content
