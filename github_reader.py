@@ -1,12 +1,14 @@
 import requests
 
-def get_github_issue(owner, repo, issue_number):
+def get_github_issue(owner, repo, issue_number, token=""):
     url = f"https://api.github.com/repos/{owner}/{repo}/issues/{issue_number}"
-    try:
-        response = requests.get(url)
-        if response.status_code == 200:
-            return response.json()
-        else:
-            return None
-    except Exception as e:
-        return None
+    headers = {}
+    if token:
+        headers["Authorization"] = f"token {token}"
+
+    response = requests.get(url, headers=headers)
+
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return {"error": f"Failed to fetch issue: {response.status_code}", "details": response.text}
