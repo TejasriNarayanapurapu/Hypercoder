@@ -1,19 +1,27 @@
 import streamlit as st
-from huggingface_hub import InferenceClient
+import requests
 from github_reader import get_github_issue
 
-hf_token = "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"
-client = InferenceClient(token=hf_token)
+# Load tokens from Streamlit secrets if available; else empty string
+HF_TOKEN = st.secrets["HF_TOKEN"] if "HF_TOKEN" in st.secrets else ""
+GITHUB_TOKEN = st.secrets.get("GITHUB_TOKEN", "")
+
+st.markdown("<h1 style='text-align: center; color: #4CAF50;'>🤗 HuggingFace-Powered HyperCoder</h1>", unsafe_allow_html=True)
+st.write("🔑 HuggingFace Key Prefix:", (HF_TOKEN[:10] + "…") if HF_TOKEN else "No token loaded")
 
 def summarize_issue(title, body):
     input_text = f"Title: {title}\n\nBody: {body}"
+    API_URL = "https://api-inference.huggingface.co/models/sshleifer/distilbart-cnn-12-6"
+    headers = {"Authorization": f"Bearer {HF_TOKEN}"} if HF_TOKEN else {}
+    payload = {"inputs": input_text}
+    response = requests.post(API_URL, headers=headers, json=payload)
+    if response.status_code != 200:
+        return f"❌ HuggingFace Error: {response.status_code} - {response.json()}"
     try:
-        output = client.pipeline(task="summarization", model="sshleifer/distilbart-cnn-12-6", inputs=input_text)
-        return output[0]['summary_text']
+        summary = response.json()[0]["summary_text"]
+        return summary
     except Exception as e:
-        return f"Error from HuggingFace: {e}"
-
-st.markdown("<h1 style='text-align: center; color: #4CAF50;'>🤗 HuggingFace HyperCoder</h1>", unsafe_allow_html=True)
+        return f"❌ Parsing Error: {e} | Raw Response: {response.json()}"
 
 with st.sidebar:
     st.header("🛠️ Repo Configuration")
@@ -22,10 +30,8 @@ with st.sidebar:
     issue_number = st.number_input("Issue Number", min_value=1, value=1)
 
 if st.button("Fetch and Summarize Issue"):
-    github_token = ""
-    issue = get_github_issue(owner, repo, issue_number, github_token)
-
-    if issue and 'title' in issue and 'body' in issue:
+    issue = get_github_issue(owner, repo, issue_number, GITHUB_TOKEN)
+    if issue and isinstance(issue, dict) and 'title' in issue and 'body' in issue:
         st.subheader("🔍 GitHub Issue Content")
         st.write(f"**Title:** {issue['title']}")
         st.write(f"**Body:** {issue['body'][:1000]}...")
@@ -35,6 +41,7 @@ if st.button("Fetch and Summarize Issue"):
         st.success(summary)
     else:
         st.error("❌ Issue not found or invalid data")
+        st.json(issue)
 
 st.markdown("""
 <hr>
