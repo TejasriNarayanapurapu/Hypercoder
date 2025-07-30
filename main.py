@@ -11,14 +11,18 @@ github_token = get_github_token()
 st.write("OpenAI API Key loaded:", "✅" if openai_key else "❌")
 st.write("GitHub Token loaded:", "✅" if github_token else "❌")
 
+import openai
+
 def summarize_issue(title, body, openai_key):
     openai.api_key = openai_key
     prompt = f"Summarize the following GitHub issue:\n\nTitle: {title}\n\nBody: {body}"
-    response = openai.ChatCompletion.create(
-        model="gpt-4",  # Or "gpt-3.5-turbo" if no GPT-4 access
+    
+    response = openai.chat.completions.create(
+        model= "gpt-3.5-turbo" 
         messages=[{"role": "user", "content": prompt}]
     )
     return response.choices[0].message.content
+
 
 owner = st.text_input("Enter GitHub owner (e.g., openai)")
 repo = st.text_input("Enter repo (e.g., gpt-4)")
