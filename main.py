@@ -27,6 +27,14 @@ owner = st.text_input("Enter GitHub owner (e.g., openai)")
 repo = st.text_input("Enter repo (e.g., gpt-4)")
 issue_num = st.number_input("Enter issue number", min_value=1, step=1)
 
+st.markdown("""
+<hr>
+<p style='text-align: center; color: gray'>
+Made with ❤️ by <b>Tejasri</b> · <a href='https://github.com/TejasriNarayanapurapu' target='_blank'>GitHub</a>
+</p>
+""", unsafe_allow_html=True)
+
+
 if st.button("Fetch Issue"):
     issue = get_github_issue(owner, repo, issue_num, github_token)
     st.json(issue)
