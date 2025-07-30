@@ -3,39 +3,41 @@ from github_reader import get_github_issue
 from transformers import pipeline
 
 st.set_page_config(page_title="HyperCoder", layout="centered")
-st.title("🚀 HyperCoder: GitHub Issue Summarizer")
+st.title("🤖 HyperCoder: GitHub Issue Summarizer")
 
-# Initialize summarizer
+# Load summarizer
 summarizer = pipeline("summarization", model="sshleifer/distilbart-cnn-12-6")
 
-with st.form("fetch_form"):
-    owner = st.text_input("🔹 GitHub Owner", value="openai")
-    repo = st.text_input("📦 Repository Name", value="openai-python")
-    issue_number = st.text_input("🐛 Issue Number", value="1")
-    submit = st.form_submit_button("Fetch Issue and Summarize")
+# Form to enter GitHub issue info
+with st.form("issue_form"):
+    owner = st.text_input("GitHub Repo Owner", value="octocat")
+    repo = st.text_input("GitHub Repo Name", value="Hello-World")
+    issue_number = st.text_input("Issue Number", value="1")
+    submitted = st.form_submit_button("Summarize")
 
-if submit:
-    st.info("⏳ Fetching issue...")
-    issue = get_github_issue(owner, repo, issue_number)
+if submitted:
+    with st.spinner("Fetching issue..."):
+        issue = get_github_issue(owner, repo, issue_number)
 
     if issue:
-        title = issue.get("title", "No Title")
-        body = issue.get("body", "No Description")
+        title = issue.get("title", "")
+        body = issue.get("body", "")
 
-        st.subheader("📌 Issue Title")
+        st.subheader("🔹 Title")
         st.write(title)
 
-        st.subheader("📝 Issue Description")
-        st.write(body)
+        st.subheader("📄 Description")
+        st.write(body if body else "No description found.")
 
-        if len(body.strip()) > 20:
-            st.subheader("🧠 AI Summary")
-            try:
-                summary = summarizer(body, max_length=100, min_length=30, do_sample=False)[0]["summary_text"]
-                st.success(summary)
-            except Exception as e:
-                st.error(f"Summarization failed: {str(e)}")
+        if body and len(body) > 50:
+            with st.spinner("Summarizing with 🤗 Hugging Face..."):
+                try:
+                    summary = summarizer(body, max_length=100, min_length=30, do_sample=False)[0]["summary_text"]
+                    st.success("🧠 Summary:")
+                    st.write(summary)
+                except Exception as e:
+                    st.error(f"Summarization failed: {e}")
         else:
-            st.warning("Issue body too short to summarize.")
+            st.warning("Body too short to summarize.")
     else:
-        st.error("❌ Could not fetch issue. Check if repo/issue exists.")
+        st.error("❌ Failed to fetch issue.")
