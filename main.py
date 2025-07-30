@@ -37,11 +37,18 @@ if st.button("Fetch and Summarize Issue"):
         st.write(f"**Body:** {issue['body'][:1000]}...")
 
         st.subheader("🧠 AI Summary")
-        summary = summarize_issue(issue['title'], issue['body'])
+
+        # If body is too short, skip summarization or give fallback
+        if len(issue['body'].strip()) < 20:
+            summary = "Issue body is very short; not enough content to summarize."
+        else:
+            summary = summarize_issue(issue['title'], issue['body'])
+
         st.success(summary)
     else:
         st.error("❌ Issue not found or invalid data")
         st.json(issue)
+
 
 st.markdown("""
 <hr>
