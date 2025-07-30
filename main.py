@@ -1,30 +1,29 @@
 import streamlit as st
-from openai import OpenAI
+import requests
 from github_reader import get_github_issue
 
-# Use your valid OpenAI API key here
-openai_key = "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"
-client = OpenAI(api_key=openai_key)
+# Hugging Face Token
+hf_token = "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"  # Replace with your Hugging Face token
 
-st.markdown("<h1 style='text-align: center; color: #4CAF50;'>🤖 HyperCoder</h1>", unsafe_allow_html=True)
-st.write("🔑 OpenAI Key Prefix:", openai_key[:6] + "…")
+st.markdown("<h1 style='text-align: center; color: #4CAF50;'>🤗 HuggingFace-Powered HyperCoder</h1>", unsafe_allow_html=True)
+st.write("🔑 HuggingFace Key Prefix:", hf_token[:10] + "…")
 
-# AI summarizer
+# Hugging Face summarization endpoint
 def summarize_issue(title, body):
-    prompt = f"Summarize this GitHub issue:\n\nTitle: {title}\n\nBody: {body}"
+    input_text = f"Title: {title}\n\nBody: {body}"
+    API_URL = "https://api-inference.huggingface.co/models/facebook/bart-large-cnn"
+    headers = {"Authorization": f"Bearer {hf_token}"}
+    
+    payload = {"inputs": input_text}
+    response = requests.post(API_URL, headers=headers, json=payload)
 
-    try:
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": prompt}]
-        )
-        return response.choices[0].message.content
-    except Exception as e:
-        if "insufficient_quota" in str(e) or "429" in str(e):
-            return "⚠️ API quota exceeded. Please check your OpenAI billing and quota."
-        return f"❌ OpenAI Error: {e}"
+    if response.status_code != 200:
+        return f"❌ HuggingFace Error: {response.status_code} - {response.json()}"
 
-# Sidebar for inputs
+    summary = response.json()[0]["summary_text"]
+    return summary
+
+# Sidebar
 with st.sidebar:
     st.header("🛠️ Repo Configuration")
     owner = st.text_input("GitHub Repo Owner", value="octocat")
@@ -33,24 +32,19 @@ with st.sidebar:
 
 # Main
 if st.button("Fetch and Summarize Issue"):
-    github_token = ""  # Optional: Add your GitHub token if rate-limited
+    github_token = ""  # Add GitHub token if needed
     issue = get_github_issue(owner, repo, issue_number, github_token)
 
-    st.subheader("🔍 GitHub Issue")
-    st.write("📦 Raw Issue Response:", issue)
-
-    if issue and isinstance(issue, dict):
-        title = issue.get('title', 'No title found')
-        body = issue.get('body', 'No body found')
-
-        st.markdown(f"**Title:** {title}")
-        st.markdown(f"**Body:**\n\n{body[:1000]}...")
+    if issue:
+        st.subheader("🔍 GitHub Issue Content")
+        st.write(f"**Title:** {issue['title']}")
+        st.write(f"**Body:** {issue['body'][:1000]}...")
 
         st.subheader("🧠 AI Summary")
-        summary = summarize_issue(title, body)
+        summary = summarize_issue(issue['title'], issue['body'])
         st.success(summary)
     else:
-        st.error("❌ Issue not found or API limit exceeded.")
+        st.error("❌ Issue not found or an error occurred.")
 
 # Footer
 st.markdown("""
@@ -59,4 +53,3 @@ st.markdown("""
 Made with ❤️ by <b>Tejasri</b> · <a href='https://github.com/TejasriNarayanapurapu' target='_blank'>GitHub</a>
 </p>
 """, unsafe_allow_html=True)
-
