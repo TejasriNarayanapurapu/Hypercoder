@@ -21,7 +21,7 @@ def summarize_issue(title, body):
 
     try:
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-3.5-turbo",  # Use "gpt-3.5-turbo" or "gpt-4" if available
             messages=[{"role": "user", "content": prompt}]
         )
         return response.choices[0].message.content
@@ -57,7 +57,6 @@ if st.button("Fetch and Summarize Issue"):
 st.markdown("""
 <hr>
 <p style='text-align: center; color: gray'>
-Made with ❤️ by <b>Tejasri</b> · <a href='https://github.com/TejasriNarayanapurapu' target='_blank'>GitHub</a>
+Made with ❤️ by <b>Tejasri Narayanapurapu</b> · <a href='https://github.com/TejasriNarayanapurapu' target='_blank'>GitHub</a>
 </p>
 """, unsafe_allow_html=True)
-
