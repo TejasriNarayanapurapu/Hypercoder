@@ -2,50 +2,40 @@ import streamlit as st
 from github_reader import get_github_issue
 from transformers import pipeline
 
-# Load summarization pipeline from Hugging Face
+st.set_page_config(page_title="HyperCoder", layout="centered")
+st.title("🚀 HyperCoder: GitHub Issue Summarizer")
+
+# Initialize summarizer
 summarizer = pipeline("summarization", model="sshleifer/distilbart-cnn-12-6")
 
-st.set_page_config(page_title="HyperCoder 🔧", layout="wide")
-st.markdown("<h1 style='text-align: center;'>🚀 HyperCoder: GitHub Issue Summarizer</h1>", unsafe_allow_html=True)
+with st.form("fetch_form"):
+    owner = st.text_input("🔹 GitHub Owner", value="openai")
+    repo = st.text_input("📦 Repository Name", value="openai-python")
+    issue_number = st.text_input("🐛 Issue Number", value="1")
+    submit = st.form_submit_button("Fetch Issue and Summarize")
 
-# GitHub Issue Input Form
-with st.form("issue_form"):
-    owner = st.text_input("GitHub Repo Owner", value="openai")
-    repo = st.text_input("Repository Name", value="openai-python")
-    issue_number = st.text_input("Issue Number", value="1")
-    submitted = st.form_submit_button("🔍 Fetch & Summarize")
-
-if submitted:
-    st.info("Fetching issue details...")
+if submit:
+    st.info("⏳ Fetching issue...")
     issue = get_github_issue(owner, repo, issue_number)
 
     if issue:
-        title = issue.get("title", "")
-        body = issue.get("body", "")
+        title = issue.get("title", "No Title")
+        body = issue.get("body", "No Description")
 
-        st.subheader("📌 Issue Title:")
+        st.subheader("📌 Issue Title")
         st.write(title)
 
-        st.subheader("📝 Issue Body:")
-        st.code(body, language="markdown")
+        st.subheader("📝 Issue Description")
+        st.write(body)
 
-        # Summarize the issue body
-        if body.strip():
-            st.subheader("🧠 AI Summary:")
+        if len(body.strip()) > 20:
+            st.subheader("🧠 AI Summary")
             try:
-                summary = summarizer(body, max_length=150, min_length=40, do_sample=False)[0]['summary_text']
+                summary = summarizer(body, max_length=100, min_length=30, do_sample=False)[0]["summary_text"]
                 st.success(summary)
             except Exception as e:
-                st.error(f"Failed to summarize: {str(e)}")
+                st.error(f"Summarization failed: {str(e)}")
         else:
-            st.warning("No content to summarize in the issue body.")
+            st.warning("Issue body too short to summarize.")
     else:
-        st.error("❌ Could not fetch issue. Check details or GitHub rate limits.")
-
-
-st.markdown("""
-<hr>
-<p style='text-align: center; color: gray'>
-Made with ❤️ by <b>Tejasri</b> · <a href='https://github.com/TejasriNarayanapurapu' target='_blank'>GitHub</a>
-</p>
-""", unsafe_allow_html=True)
+        st.error("❌ Could not fetch issue. Check if repo/issue exists.")
