@@ -13,14 +13,22 @@ st.write("OpenAI API Key loaded:", "✅" if openai_key else "❌")
 st.write("GitHub Token loaded:", "✅" if github_token else "❌")
 
 # OpenAI summarization function
+from openai import OpenAI
+
 def summarize_issue(title, body, openai_key):
-    openai.api_key = openai_key
+    client = OpenAI(api_key=openai_key)
+
     prompt = f"Summarize the following GitHub issue:\n\nTitle: {title}\n\nBody: {body}"
-    response = openai.ChatCompletion.create(
+    
+    response = client.chat.completions.create(
         model="gpt-4",
-        messages=[{"role": "user", "content": prompt}]
+        messages=[
+            {"role": "user", "content": prompt}
+        ]
     )
+    
     return response.choices[0].message.content
+
 
 # Sidebar input
 with st.sidebar:
