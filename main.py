@@ -1,43 +1,60 @@
 import streamlit as st
+from openai import OpenAI
 from github_reader import get_github_issue
-from transformers import pipeline
 
-st.set_page_config(page_title="HyperCoder", layout="centered")
-st.title("🤖 HyperCoder: GitHub Issue Summarizer")
+st.set_page_config(page_title="HyperCoder", page_icon="🤖")
 
-# Load summarizer
-summarizer = pipeline("summarization", model="sshleifer/distilbart-cnn-12-6")
+st.markdown("<h1 style='text-align: center; color: #4CAF50;'>🤖 HyperCoder</h1>", unsafe_allow_html=True)
 
-# Form to enter GitHub issue info
-with st.form("issue_form"):
+# Load API keys from Streamlit secrets or environment variables
+openai_key = st.secrets.get("OPENAI_API_KEY", "")
+github_token = st.secrets.get("GITHUB_TOKEN", "")
+
+if not openai_key:
+    st.error("OpenAI API key not found! Please add it to your Streamlit secrets as OPENAI_API_KEY.")
+    st.stop()
+
+if not github_token:
+    st.warning("GitHub token not found. You can still fetch public issues but rate limits apply.")
+
+client = OpenAI(api_key=openai_key)
+
+def summarize_issue(title, body):
+    prompt = f"Summarize the following GitHub issue:\n\nTitle: {title}\n\nBody: {body}"
+
+    try:
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}]
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        return f"Error summarizing issue: {e}"
+
+with st.sidebar:
+    st.header("🛠️ Repo Configuration")
     owner = st.text_input("GitHub Repo Owner", value="octocat")
     repo = st.text_input("GitHub Repo Name", value="Hello-World")
-    issue_number = st.text_input("Issue Number", value="1")
-    submitted = st.form_submit_button("Summarize")
+    issue_number = st.number_input("Issue Number", min_value=1, value=1)
 
-if submitted:
-    with st.spinner("Fetching issue..."):
-        issue = get_github_issue(owner, repo, issue_number)
+if st.button("Fetch and Summarize Issue"):
+    issue = get_github_issue(owner, repo, issue_number, github_token)
 
-    if issue:
-        title = issue.get("title", "")
-        body = issue.get("body", "")
+    if issue and isinstance(issue, dict) and 'title' in issue and 'body' in issue:
+        st.subheader("🔍 GitHub Issue Content")
+        st.write(f"**Title:** {issue['title']}")
+        st.write(f"**Body:** {issue['body'][:1000]}...")
 
-        st.subheader("🔹 Title")
-        st.write(title)
-
-        st.subheader("📄 Description")
-        st.write(body if body else "No description found.")
-
-        if body and len(body) > 50:
-            with st.spinner("Summarizing with 🤗 Hugging Face..."):
-                try:
-                    summary = summarizer(body, max_length=100, min_length=30, do_sample=False)[0]["summary_text"]
-                    st.success("🧠 Summary:")
-                    st.write(summary)
-                except Exception as e:
-                    st.error(f"Summarization failed: {e}")
-        else:
-            st.warning("Body too short to summarize.")
+        st.subheader("🧠 AI Summary")
+        summary = summarize_issue(issue['title'], issue['body'])
+        st.success(summary)
     else:
-        st.error("❌ Failed to fetch issue.")
+        st.error("❌ Issue not found or invalid data")
+        st.json(issue)
+
+st.markdown("""
+<hr>
+<p style='text-align: center; color: gray'>
+Made with ❤️ by <b>Tejasri</b> · <a href='https://github.com/TejasriNarayanapurapu' target='_blank'>GitHub</a>
+</p>
+""", unsafe_allow_html=True)
