@@ -17,19 +17,8 @@ client = OpenAI(api_key=openai_key)
 
 # Summarization function using new OpenAI SDK
 def summarize_issue(title, body):
-    prompt = f"Summarize the following GitHub issue:\n\nTitle: {title}\n\nBody: {body}"
-
-    try:
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": prompt}]
-        )
-        return response.choices[0].message.content
-    except Exception as e:
-        err_msg = str(e)
-        if "insufficient_quota" in err_msg or "429" in err_msg:
-            return "⚠️ API quota exceeded. Please check your OpenAI billing and quota."
-        return f"Error summarizing issue: {err_msg}"
+    # Simple mock summary for testing without API calls
+    return f"Mock summary: Issue titled '{title}' with body length {len(body)} characters."
 
 # Sidebar inputs
 with st.sidebar:
