@@ -1,5 +1,5 @@
 import streamlit as st
-import openai
+from openai import OpenAI
 from config import get_openai_key, get_github_token
 from github_reader import get_github_issue
 
@@ -12,23 +12,23 @@ github_token = get_github_token()
 st.write("OpenAI API Key loaded:", "✅" if openai_key else "❌")
 st.write("GitHub Token loaded:", "✅" if github_token else "❌")
 
-# Set OpenAI key globally
-openai.api_key = openai_key
+# Initialize OpenAI client with the new interface
+client = OpenAI(api_key=openai_key)
 
-# Summarization function using OpenAI
+# Summarization function using new OpenAI SDK
 def summarize_issue(title, body):
     prompt = f"Summarize the following GitHub issue:\n\nTitle: {title}\n\nBody: {body}"
 
     try:
-        response = openai.ChatCompletion.create(
-            model="gpt-4",  # If you don't have GPT-4 access, use "gpt-3.5-turbo"
+        response = client.chat.completions.create(
+            model="gpt-4",  # or "gpt-3.5-turbo"
             messages=[{"role": "user", "content": prompt}]
         )
-        return response['choices'][0]['message']['content']
+        return response.choices[0].message.content
     except Exception as e:
         return f"Error summarizing issue: {str(e)}"
 
-# Sidebar input
+# Sidebar inputs
 with st.sidebar:
     st.header("🛠️ Repo Configuration")
     owner = st.text_input("GitHub Repo Owner", value="octocat")
@@ -57,3 +57,4 @@ st.markdown("""
 Made with ❤️ by <b>Tejasri</b> · <a href='https://github.com/TejasriNarayanapurapu' target='_blank'>GitHub</a>
 </p>
 """, unsafe_allow_html=True)
+
