@@ -7,8 +7,10 @@ def get_github_issue(owner, repo, issue_number, token=""):
         headers["Authorization"] = f"token {token}"
 
     response = requests.get(url, headers=headers)
-
     if response.status_code == 200:
         return response.json()
     else:
-        return {"error": f"Failed to fetch issue: {response.status_code}", "details": response.text}
+        return {
+            "error": f"Failed to fetch issue: {response.status_code}",
+            "details": response.text
+        }
